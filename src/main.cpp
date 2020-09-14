@@ -1,41 +1,70 @@
 #include "Platform/Platform.hpp"
+#include "imgui.h"
+#include "imgui-SFML.h"
+
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/System/Clock.hpp>
+#include <SFML/Window/Event.hpp>
 
 int main()
 {
 	util::Platform platform;
 
-#if defined(_DEBUG)
-	std::cout << "Hello World!" << std::endl;
-#endif
+	sf::RenderWindow window(sf::VideoMode(640, 480), "");
+    window.setVerticalSyncEnabled(true);
+    ImGui::SFML::Init(window);
 
-	sf::RenderWindow window;
-	// in Windows at least, this must be called before creating the window
-	float screenScalingFactor = platform.getScreenScalingFactor(window.getSystemHandle());
-	// Use the screenScalingFactor
-	window.create(sf::VideoMode(200.0f * screenScalingFactor, 200.0f * screenScalingFactor), "SFML works!");
-	platform.setIcon(window.getSystemHandle());
+	sf::Color bgColor;
 
-	sf::CircleShape shape(window.getSize().x / 2);
-	shape.setFillColor(sf::Color::White);
+    float color[3] = { 0.f, 0.f, 0.f };
 
-	sf::Texture shapeTexture;
-	shapeTexture.loadFromFile("content/sfml.png");
-	shape.setTexture(&shapeTexture);
+    // let's use char array as buffer, see next part
+    // for instructions on using std::string with ImGui
+    char windowTitle[255] = "ImGui + SFML = <3";
 
-	sf::Event event;
+	window.setTitle(windowTitle);
+    window.resetGLStates(); // call it if you only draw ImGui. Otherwise not needed.
+    sf::Clock deltaClock;
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            ImGui::SFML::ProcessEvent(event);
 
-	while (window.isOpen())
-	{
-		while (window.pollEvent(event))
-		{
-			if (event.type == sf::Event::Closed)
-				window.close();
-		}
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+        }
 
-		window.clear();
-		window.draw(shape);
-		window.display();
-	}
+        ImGui::SFML::Update(window, deltaClock.restart());
+
+        ImGui::Begin("Sample window"); // begin window
+
+        // Background color edit
+        if (ImGui::ColorEdit3("Background color", color)) {
+            // this code gets called if color value changes, so
+            // the background color is upgraded automatically!
+            bgColor.r = static_cast<sf::Uint8>(color[0] * 255.f);
+            bgColor.g = static_cast<sf::Uint8>(color[1] * 255.f);
+            bgColor.b = static_cast<sf::Uint8>(color[2] * 255.f);
+        }
+
+		// Window title text edit
+        ImGui::InputText("Window title", windowTitle, 255);
+
+        if (ImGui::Button("Update window title")) {
+            // this code gets if user clicks on the button
+            // you could have written if(ImGui::InputText(...))
+            // but this shows how buttons work
+            window.setTitle(windowTitle);
+        }
+        ImGui::End(); // end window
+
+        window.clear(bgColor); // fill background with color
+        ImGui::SFML::Render(window);
+        window.display();
+    }
+
+    ImGui::SFML::Shutdown();
 
 	return 0;
 }

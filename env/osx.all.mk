@@ -5,16 +5,20 @@ LIB_DIRS := \
 	/usr/local/lib
 
 INCLUDE_DIRS := \
-	/usr/local/include
+	/usr/local/include \
+	/Users/dane/repositories/imgui \
+	/Users/dane/repositories/imgui-sfml/build/include
 
 BUILD_FLAGS :=
 
 MACOS_FRAMEWORK_PATHS := \
-	/Library/Frameworks
+	/Library/Frameworks \
+	/System/Library/Frameworks
 
 # Name, no extension (eg. CoreFoundation, ogg)
 MACOS_FRAMEWORKS := \
-	CoreFoundation
+	CoreFoundation \
+	OpenGL
 
 # Icon .png
 PRODUCTION_MACOS_ICON := sfml
