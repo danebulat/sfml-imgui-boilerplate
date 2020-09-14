@@ -9,8 +9,7 @@
 				"${workspaceFolder}/test",
 				"~/SFML-2.5.1/include",
 				"/usr/local/include/**",
-				"/usr/include/**",
-				"/Users/dane/repositories/imgui-sfml/build/include"
+				"/usr/include/**"
 			],
 			"defines": [
 				"_DEBUG"
