@@ -142,6 +142,85 @@ namespace ImGui
 	}
 }
 
+/* --------------------------------------------------------------------------------
+  Callback example 1: Change all input to A
+  -------------------------------------------------------------------------------- */
+
+// 1. first you define a free function
+int callback(ImGuiTextEditCallbackData* data) {
+	data->EventChar = 'A'; // makes every character fed to InputText an 'A'
+	return 0;
+}
+
+std::array<char, 100> textArr = {' '};
+
+const char replacementChar = 'Z';
+
+void callbackExample() {
+
+	// 2a. Then pass it to InputText
+	ImGui::InputText("Text", textArr.data(), textArr.size(),
+		ImGuiInputTextFlags_CallbackCharFilter, callback); // specify we're using a callbackCharFilter
+
+	// 2b. You can also use stateless lambdas which can be used just as free functions
+	ImGui::InputText("Text2", textArr.data(), textArr.size(),
+		ImGuiInputTextFlags_CallbackCharFilter,
+		[](ImGuiTextEditCallbackData* data) {
+			data->EventChar = 'A';
+			return 0;
+		}
+	);
+
+	// 3. Suppose we want to use a char variable instead of a hard-code replacement
+	//    We can store the pointer to a char in ImGuiEditCallbackData::UserData
+	ImGui::InputText("Text3", textArr.data(), textArr.size(),
+		ImGuiInputTextFlags_CallbackCharFilter,
+		[](ImGuiTextEditCallbackData* data) {
+			data->EventChar = *static_cast<const char *>(data->UserData);
+			return 0;
+		},
+		const_cast<char*>(&replacementChar)); // cast away constness (store in data->UserData)
+}
+
+/* --------------------------------------------------------------------------------------
+  Callback example 2: Defining a wrapper function that lets us pass lambdas with state
+  --------------------------------------------------------------------------------------- */
+namespace ImGui {
+
+	template <typename F>
+	bool InputTextCool(const char* label, char* buf, size_t buf_size,
+		ImGuiInputTextFlags flags = 0,
+		F callback = nullptr, void* user_data = nullptr)
+	{
+		auto freeCallback = [](ImGuiTextEditCallbackData* data) {
+			auto& f = *static_cast<F*>(data->UserData);
+			return f(data); // call our lambda with state in (stored in ImGuiTextEditCallbackData::UserData)
+		};
+																				// pass &callback as our data->UserData
+		return ImGui::InputText(label, buf, buf_size, flags, freeCallback, &callback); // (the lambda with state)
+	}
+}
+
+// Now we can pass a lambda with state like this:
+void callbackExample02(const char replacementCh) {
+
+	if (ImGui::InputTextCool("Text4", textArr.data(), textArr.size(),
+		ImGuiInputTextFlags_CallbackCharFilter,
+		[&replacementCh](ImGuiTextEditCallbackData* data) {
+			data->EventChar = replacementCh;
+			std::cout << "Replaced with: " << replacementCh << "\n";
+			return 0;
+		})) {
+			/* Do stuff when text changes */
+	}
+}
+
+/* --------------------------------------------------------------------------------------
+  Callback example 3: Generalising the approach
+  (requires boost function_traits / template programming)
+  // TODO: https://eliasdaler.github.io/using-imgui-with-sfml-pt2/
+  --------------------------------------------------------------------------------------- */
+
 /** End Demo 2 Data **/
 
 void runDemo1(sf::RenderWindow&);
@@ -326,6 +405,14 @@ void runDemo2(sf::RenderWindow& window) {
 	// InputText and std::string
 	// Can pass vector<char> or array<char> to InputText and initialise string to vector.at()
 	ImGui::InputText("Sample Input", d2::textInputBuffer.data(), d2::textInputBuffer.size() + 1);
+
+	// Callback example
+	callbackExample();
+
+	// Callback example #2
+	callbackExample02('R');
+
+
 
 	ImGui::End();
 }
