@@ -223,8 +223,27 @@ void callbackExample02(const char replacementCh) {
 
 /** End Demo 2 Data **/
 
+/** Demo 3 **/
+struct d3 {
+	static bool show_window;
+	static char buf[100];
+	static float f;
+	static float f2[2];
+	static bool my_tool_active;
+	static float my_color[4];
+};
+
+bool d3::show_window = true;
+char d3::buf[100] = {'\0'};
+float d3::f = 0.f;
+float d3::f2[2] = {.0f};
+bool d3::my_tool_active = true;
+float d3::my_color[4] = {0.f};
+/** End Demo 3 **/
+
 void runDemo1(sf::RenderWindow&);
 void runDemo2(sf::RenderWindow&);
+void runDemo3(sf::RenderWindow&);
 
 int main()
 {
@@ -242,7 +261,7 @@ int main()
 
 	sf::Clock deltaClock;
 
-	sf::Uint8 current_demo = 2;
+	sf::Uint8 current_demo = 3;
 
 	while (window.isOpen()) {
         sf::Event event;
@@ -260,6 +279,7 @@ int main()
 		switch (current_demo) {
 			case 1:  runDemo1(window); break;
 			case 2:  runDemo2(window); break;
+			case 3:  runDemo3(window); break;
 			default: runDemo1(window); break;
 		}
 
@@ -412,7 +432,75 @@ void runDemo2(sf::RenderWindow& window) {
 	// Callback example #2
 	callbackExample02('R');
 
+	ImGui::End();
+}
+
+void runDemo3(sf::RenderWindow& window) {
+
+	// Hello, World Sample window
+	if(d3::show_window)
+    {
+		if (!ImGui::Begin("Sample Window", &d3::show_window)) {
+			ImGui::End();
+		}
+		else {
+			ImGui::Text("Hello, world %d", 123);
+			if (ImGui::Button("Save")) {
+				std::cout << "Call MySaveFunction()\n";
+			}
+			ImGui::InputText("string", d3::buf, IM_ARRAYSIZE(d3::buf));
+			ImGui::SliderFloat("float", &d3::f, 0.f, 1.f);
+			ImGui::SliderFloat2("float2", d3::f2, 0.f, 1.f);
+
+			ImGui::End();
+		}
+
+		/*
+		 if(!ImGui::Begin("Test WIndow", &showWindow))
+        {
+            ImGui::End();
+        }else
+        {
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                        1000.0f / ImGui::GetIO().Framerate,
+                        ImGui::GetIO().Framerate);
+            ImGui::End();
+        }
+		*/
+
+	}
 
 
+	// Create a window called "My First Tool" with a menu bar
+	ImGui::Begin("My First Tool", &d3::my_tool_active, ImGuiWindowFlags_MenuBar);
+	if (ImGui::BeginMenuBar()) {
+			if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Open..", "Ctrl+O")) {  std::cout << "> Open()\n"; }
+			if (ImGui::MenuItem("Save", "Ctrl+S")) { std::cout << "> Save()\n"; }
+			if (ImGui::MenuItem("Close", "Ctrl+W")) { std::cout << "> Close()\n"; }
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenuBar();
+	}
+
+	// Button to show other sample window
+	if(ImGui::Button("Toggle Sample Window")) {
+		d3::show_window = !d3::show_window;
+	}
+
+	// Edit a color (stored as ~4 floats)
+	ImGui::ColorEdit4("Color", d3::my_color);
+
+	// Plot some values
+	const float my_values[] = { .2f, .1f, 1.f, .5f, .9f, 2.2f };
+	ImGui::PlotLines("Frame Times", my_values, IM_ARRAYSIZE(my_values));
+
+	// Display contents in a scrolling region
+	ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
+	ImGui::BeginChild("Scrolling");
+	for (int n = 0; n < 50; ++n) {
+		ImGui::Text("%04d: Some text", n);
+	}
+	ImGui::EndChild();
 	ImGui::End();
 }
