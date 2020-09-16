@@ -9,6 +9,8 @@
 #include <iostream>
 #include <array>
 
+#include "demos.hpp"
+
 /** Demo 1 Data **/
 struct d1 {
 	static char windowTitle[255];
@@ -33,13 +35,6 @@ struct Point {
 	float y;
 };
 
-struct Rect {
-	float x;
-	float y;
-	float w;
-	float h;
-};
-
 struct d2 {
 	static Point p;
 	static Rect r;
@@ -61,86 +56,6 @@ int d2::comboIndex = 0;
 std::vector<std::string> d2::listVec = { "Camera Animation", "Circle Tween", "Easing Functions" };
 int d2::listIndex = 0;
 std::vector<char> d2::textInputBuffer = {'t', 'e', 's', 't'};
-
-// Create an ImGui function to create float inputs for a Rect
-namespace ImGui {
-	bool InputRect(const char* label, Rect* rectPtr,
-		    int decimal_precision = -1, ImGuiInputTextFlags extra_flags = 0) {
-		ImGui::PushID(label);
-		ImGui::BeginGroup();
-
-		bool valueChanged = false;
-
-		std::array<float*, 4> arr = { &rectPtr->x, &rectPtr->y,
-									  &rectPtr->w, &rectPtr->h };
-
-		for (auto& elem: arr) {
-			ImGui::PushID(elem);
-			ImGui::PushItemWidth(64.f);
-			valueChanged |= ImGui::InputFloat("##arr", elem, 0, 0,
-				decimal_precision, extra_flags);
-			ImGui::PopID();
-			ImGui::SameLine();
-		}
-
-		ImGui::SameLine();
-		ImGui::TextUnformatted(label);
-		ImGui::EndGroup();
-
-		ImGui::PopID(); // pop label id
-
-		return valueChanged;
-	}
-}
-
-// Redefine a callback to enable an STL array or vector of strings to populate
-// a ListBox/Combox
-namespace ImGui
-{
-	// Store a pointer of our vector in void* and cast it back to a vector
-	// in the lambda.
-	static auto vector_getter = [](void* vec, int idx, const char** out_text) {
-
-		// cast back to a vector<string>*.
-		// (de-rerence to actual vector - pointer passed to function)
-		auto& vector = *static_cast<std::vector<std::string>*>(vec); // de-reference the vector<string>* (pointer)
-
-		// return false if passed index is out of bounds
-		if (idx < 0 || idx > static_cast<int>(vector.size())) { return false; }
-
-		// initialise out_text buffer to contents of std::string stored at idx
-		// in the vector
-		*out_text = vector.at(idx).c_str();
-		    // string::c_str():
-		    // Returns a pointer to an array that contains a null-terminated
-		    // sequence of characters (i.e., a C-string) representing the current
-		    // value of the string object.
-
-		return true;
-	};
-
-	// Override Combo function for std::vector<std::string>&>
-	bool Combo(const char* label, int* currIndex, std::vector<std::string>& values) {
-
-		// return false if the vector is empty
-		if (values.empty()) { return false; }
-
-		// Call ImGui::Combo and pass the lambda above. Cast vector to void*
-		return Combo(label, currIndex, vector_getter,
-			static_cast<void*>(&values), values.size());
-	}
-
-	// Override ListBox function for std::vector<std::string>&
-	bool ListBox(const char* label, int* currIndex, std::vector<std::string>& values) {
-
-		// return false if the vector is empty
-		if (values.empty()) { return false; }
-
-		// Call ImGui::ListBox and pass the lambda above. Cast vector to void*
-		return ListBox(label, currIndex, vector_getter,
-			static_cast<void*>(&values), values.size());	// Note: casts vector<string>* to void*
-	}
-}
 
 /* --------------------------------------------------------------------------------
   Callback example 1: Change all input to A
@@ -261,7 +176,7 @@ int main()
 
 	sf::Clock deltaClock;
 
-	sf::Uint8 current_demo = 3;
+	sf::Uint8 current_demo = 2;
 
 	while (window.isOpen()) {
         sf::Event event;
