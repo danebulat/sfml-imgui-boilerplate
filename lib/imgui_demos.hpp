@@ -12,7 +12,7 @@ NOTE: Only include this file in one .CPP file.
   ----------------------------------------------------------------------*/
 class Demo1 {
 private:
-	char      m_windowTitle[255];
+	char      m_windowTitle[255] = { '\0' };
 	sf::Color m_bg_color;
 	int       m_integer;
 	bool      m_open;

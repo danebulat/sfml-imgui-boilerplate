@@ -6,9 +6,6 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
-#include <iostream>
-#include <array>
-
 #include "imgui_utils.hpp"
 #include "imgui_demos.hpp"
 
