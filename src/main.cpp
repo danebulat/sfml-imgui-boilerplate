@@ -11,30 +11,7 @@
 
 #include "demos.hpp"
 
-/** Demo 1 Data **/
-struct d1 {
-	static char windowTitle[255];
-	static sf::Color bgColor;
-	static int integer;
-	static float pos[];
-	static bool open;
-    static float color[3];
-};
-
-char d1::windowTitle[255] = "Hello, ImGui";
-sf::Color d1::bgColor = sf::Color::Black;
-int d1::integer = 32;
-float d1::pos[] = {10.f, 20.f};
-bool d1::open = true;
-float d1::color[3] = {0.f, 0.f, 0.f};
-/** End Demo 1 Data **/
-
 /** Demo 2 Data **/
-struct Point {
-	float x;
-	float y;
-};
-
 struct d2 {
 	static Point p;
 	static Rect r;
@@ -100,21 +77,6 @@ void callbackExample() {
 /* --------------------------------------------------------------------------------------
   Callback example 2: Defining a wrapper function that lets us pass lambdas with state
   --------------------------------------------------------------------------------------- */
-namespace ImGui {
-
-	template <typename F>
-	bool InputTextCool(const char* label, char* buf, size_t buf_size,
-		ImGuiInputTextFlags flags = 0,
-		F callback = nullptr, void* user_data = nullptr)
-	{
-		auto freeCallback = [](ImGuiTextEditCallbackData* data) {
-			auto& f = *static_cast<F*>(data->UserData);
-			return f(data); // call our lambda with state in (stored in ImGuiTextEditCallbackData::UserData)
-		};
-																				// pass &callback as our data->UserData
-		return ImGui::InputText(label, buf, buf_size, flags, freeCallback, &callback); // (the lambda with state)
-	}
-}
 
 // Now we can pass a lambda with state like this:
 void callbackExample02(const char replacementCh) {
@@ -156,7 +118,6 @@ bool d3::my_tool_active = true;
 float d3::my_color[4] = {0.f};
 /** End Demo 3 **/
 
-void runDemo1(sf::RenderWindow&);
 void runDemo2(sf::RenderWindow&);
 void runDemo3(sf::RenderWindow&);
 
@@ -171,17 +132,21 @@ int main()
 	// (see ImGui-SFML README on how to use other fonts)
     ImGui::SFML::Init(window);
 
-	window.setTitle(d1::windowTitle);
-    window.resetGLStates(); // call it if you only draw ImGui. Otherwise not needed.
-
 	sf::Clock deltaClock;
 
-	sf::Uint8 current_demo = 2;
+	Demo1 demo1;
+
+	window.setTitle(demo1.getWindowTitle());
+    window.resetGLStates(); // call it if you only draw ImGui. Otherwise not needed.
+
+	sf::Uint8 current_demo = 1;
 
 	while (window.isOpen()) {
         sf::Event event;
 
 		while (window.pollEvent(event)) {
+
+			// process ImGui events
             ImGui::SFML::ProcessEvent(event);
 
             if (event.type == sf::Event::Closed) {
@@ -189,82 +154,28 @@ int main()
             }
         }
 
+		// update ImGui
         ImGui::SFML::Update(window, deltaClock.restart());
 
 		switch (current_demo) {
-			case 1:  runDemo1(window); break;
+			case 1:  demo1.run(window); break;
 			case 2:  runDemo2(window); break;
 			case 3:  runDemo3(window); break;
-			default: runDemo1(window); break;
+			default: demo1.run(window); break;
 		}
 
-        window.clear(d1::bgColor); // fill background with color
+        window.clear(demo1.getBackgroundColor()); // fill background with color
+
+		// render ImGui windows
         ImGui::SFML::Render(window);
+
         window.display();
     }
 
-	// Clean up ImGui, such as deleting the internal font atlas
+	// clean up ImGui, such as deleting the internal font atlas
     ImGui::SFML::Shutdown();
 
 	return 0;
-}
-
-void runDemo1(sf::RenderWindow& window) {
-
-	/** Begin window **/
-	ImGui::Begin("Sample window");
-
-	// Background color edit
-	if (ImGui::ColorEdit3("Background color", d1::color)) {
-
-		// Output changed color to console
-		std::cout << "color[r, g, b] = " << d1::color[0] << ' ' << d1::color[1] << ' ' << d1::color[2] << std::endl;
-
-		// this code gets called if color value changes, so
-		// the background color is upgraded automatically!
-		d1::bgColor.r = static_cast<sf::Uint8>(d1::color[0] * 255.f);
-		d1::bgColor.g = static_cast<sf::Uint8>(d1::color[1] * 255.f);
-		d1::bgColor.b = static_cast<sf::Uint8>(d1::color[2] * 255.f);
-	}
-
-	// Creates a text edit with "Window title" label
-	// Pass in windowTitle[] char array as data source for text edit
-	if (ImGui::InputText("Window title", d1::windowTitle, 255)) {
-		std::cout << "new windowTitle[] = " << d1::windowTitle << std::endl;
-	}
-
-	// Create a button with label "Update window title"
-	if (ImGui::Button("Update window title")) {
-		// this code gets if user clicks on the button
-		// you could have written if(ImGui::InputText(...))
-		// but this shows how buttons work
-		window.setTitle(d1::windowTitle);
-	}
-
-	if (ImGui::InputInt("Integer value", &d1::integer)) {
-		std::cout << "new integer: " << d1::integer << std::endl;
-	}
-
-	if (ImGui::InputFloat2("position", d1::pos)) {
-		std::cout << "new pos: " << d1::pos[0] << ',' << d1::pos[1] << std::endl;
-	}
-
-	if (ImGui::ArrowButton("Left Arrow Button", ImGuiDir_Left)) {
-		std::cout << "left arrow clicked\n";
-	}
-
-	if (ImGui::ArrowButton("Up Arrow Button", ImGuiDir_Up)) {
-		std::cout << "up arrow clicked\n";
-	}
-
-	ImGui::End();
-
-	ImGui::ShowAboutWindow(&d1::open);
-
-	ImGui::ShowDemoWindow(&d1::open);
-
-	ImGui::ShowMetricsWindow(&d1::open);
-	/** End window **/
 }
 
 void runDemo2(sf::RenderWindow& window) {
@@ -369,22 +280,7 @@ void runDemo3(sf::RenderWindow& window) {
 
 			ImGui::End();
 		}
-
-		/*
-		 if(!ImGui::Begin("Test WIndow", &showWindow))
-        {
-            ImGui::End();
-        }else
-        {
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                        1000.0f / ImGui::GetIO().Framerate,
-                        ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
-		*/
-
 	}
-
 
 	// Create a window called "My First Tool" with a menu bar
 	ImGui::Begin("My First Tool", &d3::my_tool_active, ImGuiWindowFlags_MenuBar);
