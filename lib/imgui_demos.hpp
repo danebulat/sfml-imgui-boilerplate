@@ -1,142 +1,11 @@
-#include "imgui.h"
-#include "imgui-SFML.h"
+#ifndef IMGUI_DEMOS_HPP
+#define IMGUI_DEMOS_HPP
 
-#include <SFML/Graphics.hpp>
+#include "imgui_utils.hpp"
 
-#include <iostream>
-#include <vector>
-#include <array>
-
-struct Rect {
-	float x;
-	float y;
-	float w;
-	float h;
-};
-
-struct Point {
-	float x;
-	float y;
-};
-
-namespace ImGui
-{
-
-/*----------------------------------------------------------------------
- Function to create float inputs for a Rect
- ----------------------------------------------------------------------*/
-bool InputRect(const char* label,
-			Rect* rect,
-			int decimal_precision = -1,
-			ImGuiInputTextFlags extra_flags = 0) {
-
-	ImGui::PushID(label);	// id for group
-	ImGui::BeginGroup();	// start group
-
-	bool value_changed = false;
-	std::array<float*, 4> arr = { &rect->x, &rect->y, &rect->w, &rect->h };
-
-	for (auto& elem : arr) {
-		ImGui::PushID(elem);			// id for InputFloat
-		ImGui::PushItemWidth(64.f);		// width for InputFloat
-		value_changed |= ImGui::InputFloat("##arr", elem, 0, 0,
-			decimal_precision, extra_flags);
-		ImGui::PopID();					// pop id for InputFloat
-		ImGui::SameLine();				// same line as previous element
-	}
-
-	//ImGui::SameLine(); /* makes no difference */
-	ImGui::TextUnformatted(label);
-
-	ImGui::EndGroup();
-	ImGui::PopID();
-
-	return value_changed;
-}
-
-/*----------------------------------------------------------------------
- Static lambda and overridden functions to enable STL arrays and vectors
- of strings to populate an ImGui::ListBox and ImGui::Combo
- ----------------------------------------------------------------------*/
-
-/** Lambda that sets the out text for the current item in ListBox or Combo
- *  based on data from a vector<string> object.
- *
- * Takes an array of data and index value.
- * Function is required to set `out_text` and return true or false.
- */
-static auto vector_getter = [](void* vec, int idx, const char** out_text) {
-
-	// cast `void* vec` parameter back to vector<string*>* and re-reference
-	auto& vector = *static_cast<std::vector<std::string>*>(vec);
-
-	// return false if idx is out of bounds
-	if (idx < 0 || idx > static_cast<int>(vector.size())) { return false; }
-
-	// set `out_text*` buffer to const char* stored in string at idx in vector
-	*out_text = vector.at(idx).c_str();
-
-	return true;
-};
-
-/** Overridden Combo function to accept std::vector<std::string>&
- */
-bool Combo(const char* label,                   // widget label
-		   int* current_item,                   // start index of item to draw
-		   std::vector<std::string>& values) {  // data vector
-
-	if (values.empty()) { return false; }		// return false if vector is empty
-
-	// Draw ImGui::Combo widget
-	return Combo(label, 						// widget label
-				 current_item, 					// start index of item to draw
-				 vector_getter,					// getter function bool(*items_getter)(void* data, int idx, const char* out_text)
-				 static_cast<void*>(&values),	// &vector array cast to void*
-				 values.size());				// number of items to draw to combo
-}
-
-/** Overridden ListBox function to accept std::vector<std::string>&
- */
-bool ListBox(const char* label,						// widget label
-			 int* current_item,					    // start index of item to draw
-			 std::vector<std::string>& values) {	// data vector
-
-	if (values.empty()) { return false; }
-
-	return ListBox(label,						// widget label
-				   current_item,				// start index of item to draw
-				   vector_getter,				// getter function bool(*items_getter)(void* data, int idx, const char* out_text)
-				   static_cast<void*>(&values),	// &vector cast to void*
-				   values.size());			    // number of items to draw to list box
-}
-
-/*----------------------------------------------------------------------
-  Wrapper function that lets us pass a lambda with state to and
-  InputText callback function
-  ----------------------------------------------------------------------*/
-template <typename F>
-bool InputTextCool(const char* label,			// widget label
-			   char* buf,						// InputText buffer
-			   size_t buf_size,					// size of buffer
-			   ImGuiInputTextFlags flags = 0,	// InputText flags
-			   F callback = nullptr,			// callback when data changes
-			   void* user_data = nullptr) {		// user data passed to callback
-
-	// stateless callback to pass to ImGui::InputText
-	auto free_callback = [](ImGuiTextEditCallbackData* data) {
-		auto& f = *static_cast<F*>(data->UserData);
-		return f(data);		// call lambda with state
-	};
-
-	return ImGui::InputText(label,				// widget label
-							buf,				// InputText buffer
-							buf_size,			// size of buffer
-							flags,				// InputText flags
-							free_callback,		// stateless callback
-							&callback);			// state callback (called in free_callback)
-}
-
-}// namespace ImGui
+/*
+NOTE: Only include this file in one .CPP file.
+*/
 
 /*----------------------------------------------------------------------
   Demo1 class
@@ -405,3 +274,146 @@ public:
 		ImGui::End();
 	}
 };
+
+/*----------------------------------------------------------------------
+  Demo3 class
+  ----------------------------------------------------------------------*/
+class Demo3 {
+private:
+	bool  m_show_window;
+	float m_float;
+	bool  m_tool_active;
+
+	char  m_buf[100]  = { '\0' };
+	float m_color[4]  = { 0.f };
+	float m_floats[2] = { 0.f };
+
+public:
+	Demo3() : m_show_window(true)
+			, m_float(.0f)
+			, m_tool_active(true)
+	{}
+
+	void run(sf::RenderWindow& window) {
+		// Hello, World Sample window
+		if(m_show_window)
+		{
+			if (!ImGui::Begin("Sample Window", &m_show_window)) {
+				ImGui::End();
+			}
+			else {
+				ImGui::Text("Hello, world %d", 123);
+				if (ImGui::Button("Save")) {
+					std::cout << "Call MySaveFunction()\n";
+				}
+				ImGui::InputText("string", m_buf, IM_ARRAYSIZE(m_buf));
+				ImGui::SliderFloat("float", &m_float, 0.f, 1.f);
+				ImGui::SliderFloat2("float2", m_floats, 0.f, 1.f);
+
+				ImGui::End();
+			}
+		}
+
+		// Create a window called "My First Tool" with a menu bar
+		ImGui::Begin("My First Tool", &m_tool_active, ImGuiWindowFlags_MenuBar);
+		if (ImGui::BeginMenuBar()) {
+				if (ImGui::BeginMenu("File")) {
+				if (ImGui::MenuItem("Open..", "Ctrl+O")) {  std::cout << "> Open()\n"; }
+				if (ImGui::MenuItem("Save", "Ctrl+S")) { std::cout << "> Save()\n"; }
+				if (ImGui::MenuItem("Close", "Ctrl+W")) { std::cout << "> Close()\n"; }
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+
+		// Button to show other sample window
+		if (ImGui::Button("Toggle Sample Window")) {
+			m_show_window = !m_show_window;
+		}
+
+		// Edit a color (stored as ~4 floats)
+		ImGui::ColorEdit4("Color", m_color);
+
+		// Plot some values
+		const float my_values[] = { .2f, .1f, 1.f, .5f, .9f, 2.2f };
+		ImGui::PlotLines("Frame Times", my_values, IM_ARRAYSIZE(my_values));
+
+		// Display contents in a scrolling region
+		ImGui::TextColored(ImVec4(1,1,0,1), "Important Stuff");
+		ImGui::BeginChild("Scrolling");
+		for (int n = 0; n < 50; ++n) {
+			ImGui::Text("%04d: Some text", n);
+		}
+		ImGui::EndChild();
+		ImGui::End();
+	}
+};
+
+/*----------------------------------------------------------------------
+  DemoManager class
+  ----------------------------------------------------------------------*/
+class DemoManager {
+private:
+	Demo1 m_demo1;
+	Demo2 m_demo2;
+	Demo3 m_demo3;
+
+	unsigned int m_current_demo;
+
+	std::vector<std::string> m_demo_names;
+
+private:
+	void draw_demo_selector() {
+		ImGui::Begin("Select Demo");
+
+		int current_item = (m_current_demo - 1);
+
+		if (ImGui::Combo("Demos", &current_item, m_demo_names)) {
+			if (m_demo_names[current_item] == "Demo 1") {
+				set_current_demo(1);
+			}
+			else if (m_demo_names[current_item] == "Demo 2") {
+				set_current_demo(2);
+			}
+			else if (m_demo_names[current_item] == "Demo 3") {
+				set_current_demo(3);
+			}
+		}
+		ImGui::End();
+	}
+
+public:
+	DemoManager() : m_current_demo(1) {
+		m_demo_names = { "Demo 1", "Demo 2", "Demo 3" };
+	}
+
+	void initialise(sf::RenderWindow& window) {
+		window.setTitle(m_demo1.getWindowTitle());
+	}
+
+	void update(sf::RenderWindow& window) {
+		draw_demo_selector();
+
+		switch (m_current_demo) {
+			case 1:  m_demo1.run(window); break;
+			case 2:  m_demo2.run(window); break;
+			case 3:  m_demo3.run(window); break;
+			default: m_demo1.run(window); break;
+		}
+
+		if (m_current_demo == 1)
+			window.clear(m_demo1.getBackgroundColor());
+		else
+			window.clear();
+	}
+
+	const uint get_current_demo() const {
+		return m_current_demo;
+	}
+
+	void set_current_demo(const uint demo) {
+		m_current_demo = demo;
+	}
+};
+
+#endif
